@@ -1,0 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+/build/
+/dist/
+*.spec
+
+# Virtual Environment
+venv/
+.env
+.venv
+env/
+ENV/
+
+# Local data and settings
+*.json
+# If you want to sync data.json/settings.json, comment the line above

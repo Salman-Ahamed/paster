@@ -6,6 +6,7 @@ import threading
 import time
 import pyperclip
 import uiautomation as auto
+import sys
 
 try:
     import keyboard
@@ -14,8 +15,13 @@ except ImportError:
     KEYBOARD_AVAILABLE = False
 
 # ── Config ────────────────────────────────────────────────────────────────────
-DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
-SETTINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "settings.json")
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DATA_FILE = os.path.join(BASE_DIR, "data.json")
+SETTINGS_FILE = os.path.join(BASE_DIR, "settings.json")
 
 CATEGORIES = ["Phone", "Name", "Email"]
 DEFAULT_HOTKEY = "ctrl+shift+space"
