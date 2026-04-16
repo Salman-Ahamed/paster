@@ -15,7 +15,7 @@ pip install pyinstaller pyperclip uiautomation keyboard --quiet
 echo.
 echo [3/3] Building executable...
 echo (This may take a minute or two)
-pyinstaller --noconsole --onefile --uac-admin --name "auto-paster" auto_paster.py
+pyinstaller --noconsole --onefile --uac-admin --version-file "version_info.txt" --name "auto-paster" auto_paster.py
 
 echo.
 echo ========================================
