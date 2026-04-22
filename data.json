@@ -106,5 +106,11 @@
     }
   ],
   "Name": [],
-  "Email": []
+  "Email": [],
+  "Password": [
+    {
+      "value": "Simple@01",
+      "pasted": false
+    }
+  ]
 }

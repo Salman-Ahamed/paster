@@ -26,7 +26,7 @@ else:
 DATA_FILE = os.path.join(BASE_DIR, "data.json")
 SETTINGS_FILE = os.path.join(BASE_DIR, "settings.json")
 
-CATEGORIES = ["Phone", "Name", "Email"]
+CATEGORIES = ["Phone", "Name", "Email", "Password"]
 DEFAULT_HOTKEY = "ctrl+shift+space"
 
 def is_admin():
@@ -156,6 +156,7 @@ class PhonePasterApp:
         self.paste_lock = threading.Lock()
         self.is_admin = is_admin()
         self.last_pasted_idx = None # Tracks last item for Undo
+        self.show_password = False
 
         self._build_ui()
         self._refresh_list()
@@ -320,11 +321,11 @@ class PhonePasterApp:
                              width=4, pady=0, command=self._add_item)
         add_btn.pack(side="left")
 
-        bulk_btn = HoverButton(input_container, text="📋 Bulk", font=FONT_BOLD,
+        self.bulk_btn = HoverButton(input_container, text="📋 Bulk", font=FONT_BOLD,
                               bg="#1e1e2d", fg=TEXT, relief="flat", cursor="hand2",
                               hover_bg="#2a2a3d", hover_fg=ACCENT,
                               padx=15, pady=8, command=self._bulk_add)
-        bulk_btn.pack(side="left", padx=(8, 0))
+        self.bulk_btn.pack(side="left", padx=(8, 0))
 
         # List frame
         list_container = tk.Frame(self.root, bg=BG)
@@ -401,6 +402,12 @@ class PhonePasterApp:
         self.settings["last_category"] = self.current_category
         save_settings(self.settings)
         self._update_pill_visuals()
+        
+        if self.current_category == "Password":
+            self.bulk_btn.pack_forget()
+        else:
+            self.bulk_btn.pack(side="left", padx=(8, 0))
+            
         self._refresh_list()
         self._set_status(f"📂 Switched to {self.current_category}")
 
@@ -448,20 +455,40 @@ class PhonePasterApp:
 
                 idx_lbl = tk.Label(row, text=f"{j+1:>3}.", font=("Consolas", 10),
                                   bg=row_bg, fg=MUTED, width=4)
-                idx_lbl.pack(side="left", padx=(8, 0))
+                if self.current_category == "Password":
+                    idx_lbl.pack_forget()
+                else:
+                    idx_lbl.pack(side="left", padx=(8, 0))
 
-                val_lbl = tk.Label(row, text=item["value"], font=FONT_BOLD,
+                display_val = item["value"]
+                if self.current_category == "Password" and not self.show_password:
+                    display_val = "•" * max(8, len(item["value"]))
+
+                val_lbl = tk.Label(row, text=display_val, font=FONT_BOLD,
                                   bg=row_bg, fg=fg, anchor="w")
                 val_lbl.pack(side="left", padx=12, pady=10, fill="x", expand=True)
 
-                if is_pasted:
-                    tk.Label(row, text="✓ pasted", font=("Segoe UI", 8, "bold"),
-                             bg=PASTED_BG, fg=ACCENT, padx=8, pady=2).pack(side="right", padx=10)
+                if self.current_category == "Password":
+                    def toggle_visibility(e):
+                        self.show_password = not self.show_password
+                        self._refresh_list()
+                    eye_icon = "👁" if not self.show_password else "🙈"
+                    eye_lbl = tk.Label(row, text=eye_icon, font=("Segoe UI Emoji", 12),
+                                       bg=row_bg, fg=MUTED, cursor="hand2")
+                    eye_lbl.pack(side="left", padx=10)
+                    eye_lbl.bind("<Button-1>", toggle_visibility)
+
+                    tk.Label(row, text="🔁 Reusable", font=("Segoe UI", 8, "bold"),
+                             bg=ACCENT_GLOW, fg=ACCENT, padx=8, pady=2).pack(side="right", padx=10)
                 else:
-                    next_idx = self._next_index()
-                    if next_idx == i:
-                        tk.Label(row, text="NEXT", font=("Segoe UI", 8, "bold"),
-                                 bg=ACCENT_GLOW, fg=ACCENT, padx=8, pady=2).pack(side="right", padx=10)
+                    if is_pasted:
+                        tk.Label(row, text="✓ pasted", font=("Segoe UI", 8, "bold"),
+                                 bg=PASTED_BG, fg=ACCENT, padx=8, pady=2).pack(side="right", padx=10)
+                    else:
+                        next_idx = self._next_index()
+                        if next_idx == i:
+                            tk.Label(row, text="NEXT", font=("Segoe UI", 8, "bold"),
+                                     bg=ACCENT_GLOW, fg=ACCENT, padx=8, pady=2).pack(side="right", padx=10)
 
                 tk.Button(row, text="✕", font=("Segoe UI", 9),
                           bg=row_bg, fg="#555566", relief="flat",
@@ -489,6 +516,13 @@ class PhonePasterApp:
             self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
     def _update_stats(self):
+        if self.current_category == "Password":
+            self.stat_total_val.config(text="1" if self.numbers else "0")
+            self.stat_done_val.config(text="∞")
+            self.stat_remaining_val.config(text="∞")
+            self.progress_var.set(100 if self.numbers else 0)
+            return
+
         total = len(self.numbers)
         done = sum(1 for n in self.numbers if n.get("pasted"))
         remaining = total - done
@@ -511,6 +545,8 @@ class PhonePasterApp:
         val = self.entry_var.get().strip()
         if not val:
             return
+        if self.current_category == "Password":
+            self.numbers.clear()
         self.numbers.append({"value": val, "pasted": False})
         save_data(self.all_data)
         self.entry_var.set("")
@@ -642,6 +678,7 @@ class PhonePasterApp:
             if any(k in full_text for k in ["mail", "email", "e-mail", "address"]): return "Email"
             if any(k in full_text for k in ["phone", "number", "tel", "mobile", "cell", "contact", "digit"]): return "Phone"
             if any(k in full_text for k in ["name", "user", "id", "first", "last", "profile"]): return "Name"
+            if any(k in full_text for k in ["pass", "pwd", "password", "pin", "secret"]): return "Password"
             
             found_msg = f"🔍 Found: {name[:12]}... (No category match)"
             self.root.after(0, lambda: self._set_status(found_msg))
@@ -671,10 +708,14 @@ class PhonePasterApp:
 
         # Find first unpasted item in THAT specific category
         idx = -1
-        for i, item in enumerate(current_list):
-            if not item.get("pasted", False):
-                idx = i
-                break
+        if target_category == "Password":
+            if current_list:
+                idx = 0
+        else:
+            for i, item in enumerate(current_list):
+                if not item.get("pasted", False):
+                    idx = i
+                    break
 
         if idx == -1:
             self._set_status(f"✓ All {target_category} items pasted")
@@ -719,14 +760,15 @@ class PhonePasterApp:
 
         if success:
             # ✅ Success: Mark as pasted and update stats
-            current_list[idx]["pasted"] = True
-            self.last_pasted_idx = idx
-            save_data(self.all_data)
+            if target_category != "Password":
+                current_list[idx]["pasted"] = True
+                self.last_pasted_idx = idx
+                save_data(self.all_data)
             
             self.root.after(0, self._refresh_list)
             self.root.after(0, self._update_stats)
             self.root.after(0, lambda: self._set_status(
-                f"✓ {'Typed' if mode == 'type' else 'Pasted'} ({target_category}): {number[:15]}..."))
+                f"✓ {'Typed' if mode == 'type' else 'Pasted'} ({target_category}): {'***' if target_category == 'Password' else number[:15]}..."))
 
     # ── Hotkey ────────────────────────────────────────────────────────────────
     def _register_hotkey(self):
