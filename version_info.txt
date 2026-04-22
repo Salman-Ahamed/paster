@@ -5,8 +5,8 @@
 VSVersionInfo(
   ffi=FixedFileInfo(
     # filevers and prodvers should be always a tuple with four items.
-    filevers=(1, 2, 1, 0),
-    prodvers=(1, 2, 1, 0),
+    filevers=(1, 3, 0, 0),
+    prodvers=(1, 3, 0, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -21,12 +21,12 @@ VSVersionInfo(
         '040904B0',
         [StringStruct('CompanyName', 'Salman Ahamed'),
         StringStruct('FileDescription', 'Auto-Paster: Efficient Data Pasting Tool'),
-        StringStruct('FileVersion', '1.2.1'),
+        StringStruct('FileVersion', '1.3.0'),
         StringStruct('InternalName', 'auto-paster'),
         StringStruct('LegalCopyright', 'Copyright (c) 2026 Salman Ahamed'),
         StringStruct('OriginalFilename', 'auto-paster.exe'),
         StringStruct('ProductName', 'Auto-Paster'),
-        StringStruct('ProductVersion', '1.2.1')])
+        StringStruct('ProductVersion', '1.3.0')])
       ]), 
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]
